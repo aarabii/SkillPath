@@ -1,8 +1,3 @@
-"""
-SkillPath — LLM Service (Section 7 + Section 9 of architecture.txt)
-Groq API calls for graph generation and question generation.
-"""
-
 import json
 import logging
 import os
@@ -13,18 +8,9 @@ from groq import Groq
 logger = logging.getLogger("skillpath.llm")
 
 
-# ---------------------------------------------------------------------------
-# Custom Exception
-# ---------------------------------------------------------------------------
-
 class LLMError(Exception):
-    """Raised when LLM service fails after retries."""
     pass
 
-
-# ---------------------------------------------------------------------------
-# Groq Client
-# ---------------------------------------------------------------------------
 
 _api_key = os.getenv("GROQ_API_KEY", "")
 if not _api_key:
@@ -32,20 +18,13 @@ if not _api_key:
 
 client = Groq(api_key=_api_key)
 
-MODEL = "llama-3.1-70b-versatile"
+MODEL = "groq/compound-mini"
 
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 def _parse_json(raw: str) -> dict:
-    """Strip markdown fences and parse JSON."""
     text = raw.strip()
-    # Strip ```json ... ``` or ``` ... ```
     if text.startswith("```"):
         lines = text.split("\n")
-        # Remove first line (```json) and last line (```)
         lines = [l for l in lines if not l.strip().startswith("```")]
         text = "\n".join(lines)
     return json.loads(text)
@@ -57,7 +36,6 @@ def _call_groq(
     max_tokens: int,
     temperature: float,
 ) -> str:
-    """Low-level Groq chat completion call with rate-limit retry."""
     try:
         response = client.chat.completions.create(
             model=MODEL,
@@ -73,7 +51,6 @@ def _call_groq(
         logger.debug("Groq API call — tokens: %s", token_count)
         return content
     except Exception as exc:
-        # Rate limit → retry once after 2s
         if hasattr(exc, "status_code") and getattr(exc, "status_code", 0) == 429:
             logger.warning("Groq rate limited — waiting 2s and retrying")
             time.sleep(2)
@@ -89,10 +66,6 @@ def _call_groq(
             return response.choices[0].message.content
         raise
 
-
-# ---------------------------------------------------------------------------
-# Graph Generation — Prompt 1 (Section 9)
-# ---------------------------------------------------------------------------
 
 GRAPH_SYSTEM_PROMPT = (
     "You are a curriculum designer and knowledge graph expert.\n"
@@ -124,11 +97,6 @@ Rules:
 
 
 def generate_graph(skill: str) -> dict:
-    """Call Groq to build a knowledge dependency graph for the given skill.
-
-    Returns dict with keys "nodes" and "edges".
-    Retries once on malformed JSON. Raises LLMError on double failure.
-    """
     user_prompt = GRAPH_USER_TEMPLATE.format(skill=skill)
     logger.info("Generating graph for skill: %s", skill)
 
@@ -142,7 +110,6 @@ def generate_graph(skill: str) -> dict:
             )
             data = _parse_json(raw)
 
-            # Validate required keys
             if "nodes" not in data or "edges" not in data:
                 raise ValueError("Missing 'nodes' or 'edges' in LLM response")
 
@@ -157,13 +124,8 @@ def generate_graph(skill: str) -> dict:
                 logger.error("Graph generation failed after 2 attempts")
                 raise LLMError("LLM service unavailable — malformed response") from exc
 
-    # Should never reach here, but just in case
     raise LLMError("LLM service unavailable")
 
-
-# ---------------------------------------------------------------------------
-# Question Generation — Prompt 2 (Section 9)
-# ---------------------------------------------------------------------------
 
 QUESTION_SYSTEM_PROMPT = (
     "You are an expert educator creating adaptive quiz questions.\n"
@@ -195,11 +157,6 @@ Rules:
 
 
 def generate_question(concept_label: str, concept_description: str) -> dict:
-    """Call Groq to generate one MCQ for a concept.
-
-    Returns dict with keys "question", "options", "correct", "explanation".
-    Retries once on malformed JSON. Raises LLMError on double failure.
-    """
     user_prompt = QUESTION_USER_TEMPLATE.format(
         concept_label=concept_label,
         concept_description=concept_description,
@@ -216,7 +173,6 @@ def generate_question(concept_label: str, concept_description: str) -> dict:
             )
             data = _parse_json(raw)
 
-            # Validate required keys
             required = {"question", "options", "correct", "explanation"}
             if not required.issubset(data.keys()):
                 raise ValueError(f"Missing keys: {required - set(data.keys())}")

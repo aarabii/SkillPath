@@ -1,8 +1,3 @@
-"""
-SkillPath — Supabase Database Layer (Section 7 of architecture.txt)
-Client initialisation and all DB query functions.
-"""
-
 import logging
 import os
 
@@ -11,18 +6,9 @@ from supabase import create_client, Client
 logger = logging.getLogger("skillpath.db")
 
 
-# ---------------------------------------------------------------------------
-# Custom Exception
-# ---------------------------------------------------------------------------
-
 class DBError(Exception):
-    """Raised when any Supabase operation fails."""
     pass
 
-
-# ---------------------------------------------------------------------------
-# Supabase Client — initialised once at module level
-# ---------------------------------------------------------------------------
 
 _url: str = os.getenv("SUPABASE_URL", "")
 _key: str = os.getenv("SUPABASE_ANON_KEY", "")
@@ -33,12 +19,7 @@ if not _url or not _key:
 supabase: Client = create_client(_url, _key)
 
 
-# ---------------------------------------------------------------------------
-# Query Functions
-# ---------------------------------------------------------------------------
-
 def create_session(target_skill: str) -> str:
-    """Insert a new session row → return session_id."""
     try:
         result = supabase.table("sessions").insert({"target_skill": target_skill}).execute()
         session_id = result.data[0]["id"]
@@ -50,8 +31,23 @@ def create_session(target_skill: str) -> str:
         raise DBError(f"Failed to create session: {exc}") from exc
 
 
+def get_session(session_id: str) -> dict:
+    try:
+        result = (
+            supabase.table("sessions")
+            .select("*")
+            .eq("id", session_id)
+            .single()
+            .execute()
+        )
+        logger.debug("DB SELECT sessions — id=%s", session_id)
+        return result.data
+    except Exception as exc:
+        logger.error("Failed to get session: %s", exc, exc_info=True)
+        raise DBError(f"Failed to get session: {exc}") from exc
+
+
 def store_graph(session_id: str, nodes: list, edges: list) -> str:
-    """Store graph nodes/edges → return graph_id."""
     try:
         result = (
             supabase.table("graphs")
@@ -67,7 +63,6 @@ def store_graph(session_id: str, nodes: list, edges: list) -> str:
 
 
 def get_graph(session_id: str) -> dict:
-    """Fetch graph by session_id → return {nodes, edges}."""
     try:
         result = (
             supabase.table("graphs")
@@ -84,7 +79,6 @@ def get_graph(session_id: str) -> dict:
 
 
 def create_quiz_state(session_id: str) -> str:
-    """Create initial quiz_state row → return state_id."""
     try:
         result = (
             supabase.table("quiz_state")
@@ -94,6 +88,7 @@ def create_quiz_state(session_id: str) -> str:
                 "known_concepts": [],
                 "unknown_concepts": [],
                 "completed": False,
+                "current_correct": "",
             })
             .execute()
         )
@@ -106,7 +101,6 @@ def create_quiz_state(session_id: str) -> str:
 
 
 def get_quiz_state(session_id: str) -> dict:
-    """Fetch current quiz state for a session."""
     try:
         result = (
             supabase.table("quiz_state")
@@ -128,8 +122,8 @@ def update_quiz_state(
     known: list,
     unknown: list,
     completed: bool,
+    current_correct: str = "",
 ) -> None:
-    """Update quiz_state arrays and completion flag."""
     try:
         (
             supabase.table("quiz_state")
@@ -138,6 +132,7 @@ def update_quiz_state(
                 "known_concepts": known,
                 "unknown_concepts": unknown,
                 "completed": completed,
+                "current_correct": current_correct,
             })
             .eq("session_id", session_id)
             .execute()
@@ -158,7 +153,6 @@ def store_quiz_result(
     user_answer: str,
     correct: bool,
 ) -> None:
-    """Insert one answered quiz question row."""
     try:
         supabase.table("quiz_results").insert({
             "session_id": session_id,
@@ -174,7 +168,6 @@ def store_quiz_result(
 
 
 def store_path(session_id: str, steps: list) -> str:
-    """Store final learning path → return path_id."""
     try:
         result = (
             supabase.table("paths")
@@ -190,7 +183,6 @@ def store_path(session_id: str, steps: list) -> str:
 
 
 def get_path(session_id: str) -> dict:
-    """Fetch learning path by session_id."""
     try:
         result = (
             supabase.table("paths")
