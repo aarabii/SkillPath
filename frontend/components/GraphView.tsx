@@ -18,6 +18,7 @@ import '@xyflow/react/dist/style.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { NodeSchema, EdgeSchema } from '@/lib/api';
+import Dagre from '@dagrejs/dagre';
 
 export type NodeStatus = 'unassessed' | 'known' | 'unknown' | 'learning_path';
 
@@ -26,6 +27,68 @@ interface GraphViewProps {
   edgesData: EdgeSchema[];
   nodeStatuses?: Record<string, NodeStatus>;
   onNodeClick?: (nodeId: string) => void;
+}
+
+// --- Dagre layout helper ---
+const NODE_WIDTH = 180;
+const NODE_HEIGHT = 50;
+
+function getLayoutedElements(
+  nodes: NodeSchema[],
+  edges: EdgeSchema[],
+  nodeStatuses: Record<string, NodeStatus>,
+): { nodes: Node[]; edges: Edge[] } {
+  const g = new Dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
+
+  g.setGraph({
+    rankdir: 'TB',       // top-to-bottom hierarchy
+    nodesep: 60,         // horizontal gap between sibling nodes
+    ranksep: 100,        // vertical gap between ranks
+    marginx: 30,
+    marginy: 30,
+  });
+
+  // Register every node with dagre
+  nodes.forEach((node) => {
+    g.setNode(node.id, { width: NODE_WIDTH, height: NODE_HEIGHT });
+  });
+
+  // Register every edge with dagre
+  edges.forEach((edge) => {
+    g.setEdge(edge.source, edge.target);
+  });
+
+  Dagre.layout(g);
+
+  // Build React Flow nodes from dagre-computed positions
+  const layoutedNodes: Node[] = nodes.map((node) => {
+    const pos = g.node(node.id);
+    return {
+      id: node.id,
+      type: 'custom',
+      // dagre returns center coordinates; offset by half width/height for React Flow
+      position: {
+        x: pos.x - NODE_WIDTH / 2,
+        y: pos.y - NODE_HEIGHT / 2,
+      },
+      data: {
+        label: node.label,
+        description: node.description,
+        status: nodeStatuses[node.id] || 'unassessed',
+      },
+    };
+  });
+
+  const layoutedEdges: Edge[] = edges.map((edge) => ({
+    id: `e-${edge.source}-${edge.target}`,
+    source: edge.source,
+    target: edge.target,
+    animated: true,
+    style: { stroke: 'hsl(180 100% 50% / 0.5)', strokeWidth: 2 },
+    type: 'smoothstep',
+  }));
+
+  return { nodes: layoutedNodes, edges: layoutedEdges };
 }
 
 // Custom Node Component
@@ -57,33 +120,11 @@ const CustomNode = ({ data, id }: any) => {
 export function GraphView({ nodesData, edgesData, nodeStatuses = {}, onNodeClick }: GraphViewProps) {
   const nodeTypes = useMemo(() => ({ custom: CustomNode }), []);
 
-  const initialNodes: Node[] = nodesData.map((node, index) => {
-    // Simple layout logic for now, ideally backend passes layout or we use dagre for DAG layout
-    // We will scatter them randomly or in a grid just for initialization if layout isn't provided
-    // but typically a DAG layout is used. Assuming we just do a simple vertical stagger for presentation
-    const x = (index % 3) * 200;
-    const y = Math.floor(index / 3) * 150;
-    
-    return {
-      id: node.id,
-      type: 'custom',
-      position: { x, y },
-      data: {
-        label: node.label,
-        description: node.description,
-        status: nodeStatuses[node.id] || 'unassessed',
-      },
-    };
-  });
-
-  const initialEdges: Edge[] = edgesData.map((edge, index) => ({
-    id: `e-${edge.source}-${edge.target}`,
-    source: edge.source,
-    target: edge.target,
-    animated: true,
-    style: { stroke: 'hsl(180 100% 50% / 0.5)', strokeWidth: 2 },
-    type: 'smoothstep',
-  }));
+  // Compute hierarchical layout via dagre
+  const { nodes: initialNodes, edges: initialEdges } = useMemo(
+    () => getLayoutedElements(nodesData, edgesData, nodeStatuses),
+    [nodesData, edgesData, nodeStatuses],
+  );
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);

@@ -33,7 +33,7 @@ export interface QuestionSchema {
   explanation: string;
   concept_id: string;
   concept_label: string;
-  progress: Record<string, number>;
+  progress: { assessed: number; total: number };
 }
 
 export interface QuizStartResponse {
@@ -136,10 +136,9 @@ export const api = {
     });
   },
 
-  getPath: async (data: PathRequest): Promise<PathResponse> => {
-    return fetchWithRetry(`${API_URL}/api/path`, {
-      method: 'POST',
-      body: JSON.stringify(data),
+  getPath: async (sessionId: string): Promise<PathResponse> => {
+    return fetchWithRetry(`${API_URL}/api/path/${sessionId}`, {
+      method: 'GET',
     });
   },
 };

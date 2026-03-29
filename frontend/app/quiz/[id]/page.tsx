@@ -19,9 +19,7 @@ export default function QuizArena() {
   const [currentQuestion, setCurrentQuestion] = useState<QuestionSchema | null>(null);
   const [isComplete, setIsComplete] = useState(false);
   
-  // Progress estimation (since we don't know exact total questions upfront in an adaptive quiz, 
-  // we could just fake a progressing bar, or base it on an arbitrary 'max' of 5-10 for UI purposes)
-  const [questionsAnswered, setQuestionsAnswered] = useState(0);
+
 
   useEffect(() => {
     if (!id) return;
@@ -54,7 +52,6 @@ export default function QuizArena() {
   };
 
   const handleNext = (nextQuestion?: QuestionSchema, completed?: boolean) => {
-    setQuestionsAnswered(prev => prev + 1);
 
     if (completed) {
       setIsComplete(true);
@@ -112,8 +109,12 @@ export default function QuizArena() {
     );
   }
 
-  // Simulated progress percentage (caps at 95% until complete)
-  const progressPct = isComplete ? 100 : Math.min(((questionsAnswered + 1) / 5) * 100, 95);
+  // Real progress from the API (assessed / total concepts)
+  const progressPct = isComplete
+    ? 100
+    : currentQuestion
+      ? Math.round((currentQuestion.progress.assessed / Math.max(currentQuestion.progress.total, 1)) * 100)
+      : 0;
 
   return (
     <main className="min-h-screen bg-black flex flex-col relative overflow-hidden">

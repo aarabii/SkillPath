@@ -26,6 +26,7 @@ export function QuizCard({ question, onAnswerSubmit, onNext, isSubmitting = fals
       const res = await onAnswerSubmit(option);
       setResult(res);
     } catch (e) {
+      console.error('Quiz answer submission failed:', e);
       // Revert if error occurs so user can try again
       setSelectedOption(null);
     }

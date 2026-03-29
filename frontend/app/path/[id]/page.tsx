@@ -25,7 +25,7 @@ export default function PathDashboard() {
     const fetchAllData = async () => {
       try {
         const [pathRes, graphRes] = await Promise.all([
-          api.getPath({ session_id: id }),
+          api.getPath(id),
           api.getGraph(id).catch(() => null), // Graph might not exist if mock or separate, but we try
         ]);
         setPathData(pathRes);

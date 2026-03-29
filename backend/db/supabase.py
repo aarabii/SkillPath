@@ -196,3 +196,21 @@ def get_path(session_id: str) -> dict:
     except Exception as exc:
         logger.error("Failed to get path: %s", exc, exc_info=True)
         raise DBError(f"Failed to get path: {exc}") from exc
+
+
+def get_path_if_exists(session_id: str) -> dict | None:
+    """Return the stored path row or *None* if no path exists yet."""
+    try:
+        result = (
+            supabase.table("paths")
+            .select("steps")
+            .eq("session_id", session_id)
+            .maybe_single()
+            .execute()
+        )
+        logger.debug("DB SELECT paths (maybe) — session_id=%s", session_id)
+        return result.data  # None when no row matched
+    except Exception as exc:
+        logger.error("Failed to check path: %s", exc, exc_info=True)
+        raise DBError(f"Failed to check path: {exc}") from exc
+
