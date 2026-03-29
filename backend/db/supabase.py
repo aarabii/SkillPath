@@ -41,7 +41,9 @@ def get_session(session_id: str) -> dict:
             .execute()
         )
         logger.debug("DB SELECT sessions — id=%s", session_id)
-        return result.data
+        if result is None:
+            return None
+        return getattr(result, "data", None)
     except Exception as exc:
         logger.error("Failed to get session: %s", exc, exc_info=True)
         raise DBError(f"Failed to get session: {exc}") from exc
@@ -72,28 +74,41 @@ def get_graph(session_id: str) -> dict:
             .execute()
         )
         logger.debug("DB SELECT graphs — session_id=%s", session_id)
-        return result.data
+        if result is None:
+            return None
+        return getattr(result, "data", None)
     except Exception as exc:
         logger.error("Failed to get graph: %s", exc, exc_info=True)
         raise DBError(f"Failed to get graph: {exc}") from exc
 
 
 def create_quiz_state(session_id: str) -> str:
+    """Create a quiz_state row, or return the existing one (upsert).
+
+    Uses ``upsert`` with ``on_conflict="session_id"`` so that concurrent
+    calls (e.g. React strict-mode double-fires) can never produce duplicate
+    rows.  If the row already exists the INSERT is silently ignored and the
+    existing row is returned.
+    """
     try:
         result = (
             supabase.table("quiz_state")
-            .insert({
-                "session_id": session_id,
-                "assessed_concepts": [],
-                "known_concepts": [],
-                "unknown_concepts": [],
-                "completed": False,
-                "current_correct": "",
-            })
+            .upsert(
+                {
+                    "session_id": session_id,
+                    "assessed_concepts": [],
+                    "known_concepts": [],
+                    "unknown_concepts": [],
+                    "completed": False,
+                    "current_correct": "",
+                },
+                on_conflict="session_id",
+                ignore_duplicates=True,
+            )
             .execute()
         )
         state_id = result.data[0]["id"]
-        logger.debug("DB INSERT quiz_state — session_id=%s", session_id)
+        logger.debug("DB UPSERT quiz_state — session_id=%s", session_id)
         return state_id
     except Exception as exc:
         logger.error("Failed to create quiz state: %s", exc, exc_info=True)
@@ -101,19 +116,48 @@ def create_quiz_state(session_id: str) -> str:
 
 
 def get_quiz_state(session_id: str) -> dict:
+    """Return the quiz_state row for the session.
+
+    Uses ``.maybe_single()`` so a missing row returns ``None`` instead of
+    raising a PostgREST error; we then raise a clean ``DBError``.
+    """
     try:
         result = (
             supabase.table("quiz_state")
             .select("*")
             .eq("session_id", session_id)
-            .single()
+            .maybe_single()
             .execute()
         )
         logger.debug("DB SELECT quiz_state — session_id=%s", session_id)
-        return result.data
+        data = getattr(result, "data", None) if result is not None else None
+        if data is None:
+            raise DBError(f"No quiz_state found for session {session_id}")
+        return data
+    except DBError:
+        raise
     except Exception as exc:
         logger.error("Failed to get quiz state: %s", exc, exc_info=True)
         raise DBError(f"Failed to get quiz state: {exc}") from exc
+
+
+def get_quiz_state_if_exists(session_id: str) -> dict | None:
+    """Return the quiz_state row for the session, or *None* if none exists."""
+    try:
+        result = (
+            supabase.table("quiz_state")
+            .select("*")
+            .eq("session_id", session_id)
+            .maybe_single()
+            .execute()
+        )
+        logger.debug("DB SELECT quiz_state (maybe) — session_id=%s", session_id)
+        if result is None:
+            return None
+        return getattr(result, "data", None)
+    except Exception as exc:
+        logger.error("Failed to check quiz state: %s", exc, exc_info=True)
+        raise DBError(f"Failed to check quiz state: {exc}") from exc
 
 
 def update_quiz_state(
@@ -192,7 +236,9 @@ def get_path(session_id: str) -> dict:
             .execute()
         )
         logger.debug("DB SELECT paths — session_id=%s", session_id)
-        return result.data
+        if result is None:
+            return None
+        return getattr(result, "data", None)
     except Exception as exc:
         logger.error("Failed to get path: %s", exc, exc_info=True)
         raise DBError(f"Failed to get path: {exc}") from exc
@@ -209,7 +255,9 @@ def get_path_if_exists(session_id: str) -> dict | None:
             .execute()
         )
         logger.debug("DB SELECT paths (maybe) — session_id=%s", session_id)
-        return result.data  # None when no row matched
+        if result is None:
+            return None
+        return getattr(result, "data", None)  # None when no row matched
     except Exception as exc:
         logger.error("Failed to check path: %s", exc, exc_info=True)
         raise DBError(f"Failed to check path: {exc}") from exc

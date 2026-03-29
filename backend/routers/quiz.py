@@ -6,6 +6,7 @@ from db.supabase import (
     get_graph,
     create_quiz_state,
     get_quiz_state,
+    get_quiz_state_if_exists,
     update_quiz_state,
     store_quiz_result,
     DBError,
@@ -60,6 +61,57 @@ async def start_quiz(body: QuizStartRequest):
     edges = graph_data["edges"]
     graph = build_graph(nodes, edges)
 
+    # ── Idempotency guard ──────────────────────────────────────────────
+    # If a quiz_state row already exists (e.g. the user refreshed the page
+    # or React strict-mode double-fired the effect), reuse it rather than
+    # inserting a duplicate row that would cause PGRST116 later.
+    try:
+        existing_state = get_quiz_state_if_exists(session_id)
+    except DBError as exc:
+        logger.error("DB error checking quiz state: %s", exc)
+        raise HTTPException(status_code=500, detail={"detail": str(exc), "code": "DB_ERROR"})
+
+    if existing_state is not None:
+        # Resume from where the quiz left off
+        assessed = list(existing_state.get("assessed_concepts", []))
+        known = list(existing_state.get("known_concepts", []))
+
+        next_concept = get_next_concept(graph, assessed, known)
+        if next_concept is None:
+            raise HTTPException(
+                status_code=422,
+                detail={"detail": "All concepts already assessed", "code": "QUIZ_COMPLETE"},
+            )
+
+        attrs = graph.nodes[next_concept]
+        label = attrs.get("label", next_concept)
+        description = attrs.get("description", "")
+
+        try:
+            question, correct_answer = _make_question(
+                next_concept, label, description,
+                total_nodes=graph.number_of_nodes(),
+                assessed_count=len(assessed),
+            )
+        except LLMError as exc:
+            logger.error("LLM error generating question: %s", exc)
+            raise HTTPException(status_code=500, detail={"detail": str(exc), "code": "GROQ_ERROR"})
+
+        try:
+            update_quiz_state(
+                session_id, assessed, known,
+                unknown=list(existing_state.get("unknown_concepts", [])),
+                completed=False,
+                current_correct=correct_answer,
+            )
+        except DBError as exc:
+            logger.error("DB error updating current_correct: %s", exc)
+            raise HTTPException(status_code=500, detail={"detail": str(exc), "code": "DB_ERROR"})
+
+        logger.info("Quiz resumed (existing state) — session_id=%s, concept=%s", session_id, next_concept)
+        return QuizStartResponse(question=question)
+
+    # ── First-time start ───────────────────────────────────────────────
     try:
         create_quiz_state(session_id)
     except DBError as exc:

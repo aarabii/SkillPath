@@ -2,7 +2,7 @@ import logging
 
 from fastapi import APIRouter, HTTPException
 
-from db.supabase import get_session, get_quiz_state, get_graph, store_path, get_path_if_exists, DBError
+from db.supabase import supabase, get_session, get_quiz_state, get_graph, store_path, get_path_if_exists, DBError
 from models.schemas import PathRequest, PathResponse, PathStepSchema
 from services.graph_engine import build_graph, get_target_node
 from services.path_engine import compute_minimal_path, get_resource
@@ -106,46 +106,29 @@ async def create_path(body: PathRequest):
     return _compute_and_store_path(body.session_id)
 
 
-@router.get("/{session_id}", response_model=PathResponse)
+@router.get("/{session_id}")
 async def get_path(session_id: str):
-    """Return an existing path if cached, otherwise compute and store it."""
-
-    # 1. Check if a path already exists in the DB
     try:
-        existing = get_path_if_exists(session_id)
-    except DBError as exc:
-        logger.error("DB error checking path: %s", exc)
-        raise HTTPException(status_code=500, detail={"detail": str(exc), "code": "DB_ERROR"})
-
-    if existing is not None:
-        # Reconstruct the full PathResponse from the stored steps
-        steps_raw = existing["steps"]
-        steps = [PathStepSchema(**s) for s in steps_raw]
-
-        try:
-            session = get_session(session_id)
-            state = get_quiz_state(session_id)
-            graph_data = get_graph(session_id)
-        except DBError as exc:
-            logger.error("DB error: %s", exc)
-            raise HTTPException(status_code=500, detail={"detail": str(exc), "code": "DB_ERROR"})
-
-        graph = build_graph(graph_data["nodes"], graph_data["edges"])
-        total_concepts = graph.number_of_nodes()
-        concepts_known = len(list(state.get("known_concepts", [])))
-        reduction_percentage = round((concepts_known / total_concepts) * 100, 1) if total_concepts > 0 else 0.0
-
-        logger.info("Path cache hit — session_id=%s", session_id)
-        return PathResponse(
-            session_id=session_id,
-            total_concepts_in_graph=total_concepts,
-            concepts_already_known=concepts_known,
-            concepts_to_learn=len(steps),
-            reduction_percentage=reduction_percentage,
-            steps=steps,
-        )
-
-    # 2. No cached path — compute from scratch
-    logger.info("Path cache miss — computing for session_id=%s", session_id)
-    return _compute_and_store_path(session_id)
+        import traceback
+        # Step 1: Try to get existing path directly from supabase client
+        result = supabase.table("paths").select("*").eq("session_id", session_id).execute()
+        
+        if result.data and len(result.data) > 0:
+            # Cached path exists — return it
+            stored = result.data[0]
+            steps = stored.get("steps", [])
+            return {
+                "total_concepts_in_graph": len(steps),
+                "concepts_already_known": 0,
+                "reduction_percentage": 0,
+                "steps": steps
+            }
+        
+        # Step 2: No cached path — compute fresh
+        return _compute_and_store_path(session_id)
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to load path: {str(e)}")
 
