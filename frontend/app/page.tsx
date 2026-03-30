@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { SkillInput } from "@/components/SkillInput";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { BackgroundBeams } from "@/components/ui/background-beams";
 import { api } from "@/lib/api";
 
 export default function LandingPage() {
@@ -28,13 +29,14 @@ export default function LandingPage() {
   };
 
   return (
-    <main className="min-h-screen relative flex flex-col items-center justify-center p-6 md:p-24 overflow-x-hidden bg-background">
-      <div className="w-full max-w-6xl mx-auto z-10">
+    <main className="min-h-screen relative flex flex-col items-center justify-center p-6 md:p-24 overflow-x-hidden bg-neutral-950 antialiased">
+      <BackgroundBeams />
+      <div className="w-full max-w-6xl mx-auto relative z-10">
         {isLoading ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="w-full flex justify-center py-20"
+            className="w-full flex justify-center py-20 relative z-10"
           >
             <LoadingSpinner />
           </motion.div>
@@ -60,8 +62,8 @@ export default function LandingPage() {
                 transition={{ duration: 0.5, delay: 0.1 }}
                 className="inline-flex items-center gap-2 mb-8"
               >
-                <span className="w-1.5 h-1.5 bg-white rounded-full" />
-                <span className="text-[10px] font-sans tracking-widest text-zinc-400 uppercase">
+                <span className="w-1.5 h-1.5 bg-indigo-500/80 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.6)]" />
+                <span className="text-[10px] font-sans tracking-widest text-indigo-300/70 uppercase">
                   The future of accelerated learning
                 </span>
               </motion.div>
@@ -70,7 +72,7 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                className="font-serif text-5xl md:text-7xl lg:text-8xl font-normal tracking-tight text-white mb-8 leading-[1.1]"
+                className="relative z-10 text-5xl md:text-7xl lg:text-8xl bg-clip-text text-transparent bg-linear-to-b from-zinc-100 via-zinc-300 to-zinc-600 text-center font-serif font-bold mb-8 leading-[1.1]"
               >
                 Skill Path
               </motion.h1>
@@ -79,9 +81,9 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.3 }}
-                className="font-sans text-lg md:text-xl text-zinc-400 leading-relaxed max-w-2xl mx-auto mb-12"
+                className="text-neutral-500 max-w-2xl mx-auto my-2 text-lg md:text-xl text-center relative z-10 font-sans leading-relaxed mb-12"
               >
-                Explore the shortest distance betwee you and mastery.
+                Explore the shortest distance between you and mastery.
               </motion.p>
             </div>
 
@@ -90,7 +92,7 @@ export default function LandingPage() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="w-full"
+              className="w-full relative z-10"
             >
               <SkillInput onSubmit={handleGeneratePath} isLoading={isLoading} />
             </motion.div>

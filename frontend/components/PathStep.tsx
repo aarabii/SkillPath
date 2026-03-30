@@ -17,28 +17,28 @@ export function PathStep({ step, index, isLast }: PathStepProps) {
 
   const badgeStyles = isMastered
     ? {
-        bg: "bg-transparent",
-        border: "border-zinc-800",
-        text: "text-zinc-500",
-        icon: <Check className="w-3 h-3 mr-1 text-zinc-500" />,
+        bg: "bg-emerald-500/5",
+        border: "border-emerald-500/20",
+        text: "text-emerald-400/80",
+        icon: <Check className="w-3 h-3 mr-1 text-emerald-400/80" />,
       }
     : {
-        bg: "bg-white",
-        border: "border-white",
-        text: "text-black",
-        icon: <Target className="w-3 h-3 mr-1 text-black" />,
+        bg: "bg-indigo-500/5",
+        border: "border-indigo-500/20",
+        text: "text-indigo-300/80",
+        icon: <Target className="w-3 h-3 mr-1 text-indigo-300/80" />,
       };
 
   return (
     <div className="relative flex items-start group">
       {/* Timeline Tracking Line */}
       {!isLast && (
-        <div className="absolute left-6.75 top-14 -bottom-4 w-px bg-zinc-800 -ml-px" />
+        <div className="absolute left-6.75 top-14 -bottom-4 w-px bg-indigo-950/50 -ml-px" />
       )}
 
       {/* Step Number Badge */}
-      <div className="shrink-0 relative z-10 w-14 h-14 bg-transparent border border-zinc-800 flex items-center justify-center mr-6 transition-all duration-300 group-hover:border-white">
-        <span className="text-sm font-sans font-normal text-white">
+      <div className="shrink-0 relative z-10 w-14 h-14 bg-transparent border border-zinc-800 flex items-center justify-center mr-6 transition-all duration-300 group-hover:border-indigo-500/40 group-hover:shadow-[0_0_15px_-3px_rgba(99,102,241,0.15)]">
+        <span className="text-sm font-sans font-normal text-white group-hover:text-indigo-200 transition-colors">
           {index + 1}
         </span>
       </div>
@@ -51,9 +51,9 @@ export function PathStep({ step, index, isLast }: PathStepProps) {
         viewport={{ once: true, margin: "-50px" }}
         transition={{ duration: 0.5, delay: index * 0.1 }}
       >
-        <div className="bg-transparent border-l border-zinc-800 p-6 md:p-8 transition-all duration-300 hover:border-white/20">
+        <div className="bg-transparent border-l border-zinc-800 p-6 md:p-8 transition-all duration-300 hover:border-indigo-500/30">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-            <h3 className="text-2xl font-serif text-white tracking-tight">
+            <h3 className="text-2xl font-serif text-white tracking-tight group-hover:text-indigo-50 transition-colors">
               {step.concept_label}
             </h3>
             <div
@@ -93,7 +93,7 @@ export function PathStep({ step, index, isLast }: PathStepProps) {
               </div>
             </div>
           ) : (
-            <div className="flex flex-col gap-2 pt-2">
+            <div className="flex flex-col gap-2 pt-2 max-h-80 overflow-y-auto pr-2 styled-scrollbar">
               {step.resources?.map((res, i) => {
                 const url = res.href || res.url;
                 const isVideo =
@@ -104,9 +104,9 @@ export function PathStep({ step, index, isLast }: PathStepProps) {
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-start gap-4 p-4 border border-zinc-800 hover:border-white/20 transition-all group group-hover:bg-white/5"
+                    className="flex items-start gap-4 p-4 border border-zinc-800 hover:border-indigo-500/30 transition-all group/link hover:bg-indigo-500/5 hover:shadow-[0_0_15px_-3px_rgba(99,102,241,0.1)] mb-2"
                   >
-                    <div className="shrink-0 w-8 h-8 flex items-center justify-center border border-zinc-800 text-zinc-500 group-hover:text-white transition-colors">
+                    <div className="shrink-0 w-8 h-8 flex items-center justify-center border border-zinc-800 text-zinc-500 group-hover/link:text-indigo-400 group-hover/link:border-indigo-500/30 transition-colors">
                       {isVideo ? (
                         <PlayCircle className="w-4 h-4" />
                       ) : (
@@ -114,7 +114,10 @@ export function PathStep({ step, index, isLast }: PathStepProps) {
                       )}
                     </div>
                     <div className="flex flex-col flex-1">
-                      <h4 className="text-sm font-sans font-normal text-zinc-200 group-hover:text-white transition-colors leading-relaxed mb-1">
+                      <h4 className="text-sm font-sans font-normal text-zinc-200 group-hover/link:text-indigo-100 transition-colors leading-relaxed mb-1 flex items-center gap-2">
+                        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-zinc-800 group-hover/link:bg-indigo-500/20 text-[10px] text-zinc-400 group-hover/link:text-indigo-300 font-medium transition-colors">
+                          {i + 1}
+                        </span>
                         {res.title}
                       </h4>
                       {res.description && (

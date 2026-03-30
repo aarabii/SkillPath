@@ -86,14 +86,21 @@ function getLayoutedElements(
     };
   });
 
-  const layoutedEdges: Edge[] = edges.map((edge) => ({
-    id: `e-${edge.source}-${edge.target}`,
-    source: edge.source,
-    target: edge.target,
-    animated: false,
-    style: { stroke: "#444444", strokeWidth: 1 },
-    type: "smoothstep",
-  }));
+  const layoutedEdges: Edge[] = edges.map((edge) => {
+    // Adding some premium effects to the lines connecting nodes
+    return {
+      id: `e-${edge.source}-${edge.target}`,
+      source: edge.source,
+      target: edge.target,
+      animated: true,
+      style: {
+        stroke: "#a1a1aa",
+        strokeWidth: 2,
+        filter: "drop-shadow(0px 0px 2px rgba(255,255,255,0.2))",
+      },
+      type: "bezier",
+    };
+  });
 
   return { nodes: layoutedNodes, edges: layoutedEdges };
 }
@@ -130,8 +137,8 @@ const CustomNode = ({ data, id }: any) => {
           status === "unknown" && "bg-zinc-500",
         )}
       />
-      <div className="absolute top-4 w-32 text-center">
-        <span className="text-[10px] font-sans text-zinc-400 leading-tight">
+      <div className="absolute top-4 w-40 text-center z-10 bg-neutral-950/80 px-2 py-1 rounded-md backdrop-blur-md border border-white/5">
+        <span className="text-xs md:text-sm font-serif font-semibold text-white tracking-widest leading-tight drop-shadow-sm">
           {label}
         </span>
       </div>

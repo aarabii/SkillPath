@@ -8,34 +8,43 @@ from db.supabase import get_cached_resources, store_cached_resources
 
 logger = logging.getLogger("skillpath.path_engine")
 
-from duckduckgo_search import DDGS
-
-def search_web_duckduckgo(query: str, max_results: int = 5) -> list[dict]:
+def search_web_google(query: str, max_results: int = 5) -> list[dict]:
     results = []
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.75 Safari/537.36"
+    }
+    url = f"https://www.google.com/search?q={quote_plus(query)}&num={max_results+2}" # Request a couple extra to ensure we get 5 valid links
     try:
-        with DDGS() as ddgs:
-            ddg_results = ddgs.text(query, max_results=max_results)
-            if ddg_results:
-                for r in ddg_results:
-                    href = r.get("href", "")
-                    title = r.get("title", href)
-                    if href:
-                        results.append({"title": title, "url": href})
+        response = requests.get(url, headers=headers, timeout=5)
+        soup = BeautifulSoup(response.text, "html.parser")
+        for g in soup.find_all('div', class_='g'):
+            anchors = g.find_all('a')
+            if anchors:
+                link = anchors[0]['href']
+                title_elem = g.find('h3')
+
+                if title_elem and link and link.startswith('http'):
+                    results.append({
+                        "title": title_elem.text,
+                        "url": link
+                    })
+            if len(results) >= max_results:
+                break
     except Exception as e:
-        logger.warning("DuckDuckGo search failed for query '%s': %s", query, str(e))
+        logger.warning("Google search failed for query '%s': %s", query, str(e))
     return results
 
 def get_resources(concept_label: str) -> list[dict]:
     key = concept_label.strip()
-    
+
     # 1. Check Database Cache
     cached = get_cached_resources(key)
     if cached:
         logger.info("Cache hit for concept resources: '%s'", key)
         return cached
 
-    # 2. Perform Live Searches using DuckDuckGo
-    results = search_web_duckduckgo(f"learn {key}", max_results=5)
+    # 2. Perform Live Searches using Google
+    results = search_web_google(f"learn {key}", max_results=5)
 
     # 3. Store Database Cache
     if results:
@@ -43,8 +52,15 @@ def get_resources(concept_label: str) -> list[dict]:
 
     # 4. Deterministic Fallbacks if network search utterly fails
     if not results:
-        results.append({"title": f"{key} Search", "url": f"https://www.google.com/search?q={quote_plus(key)}"})
-    
+        base_url = "https://www.google.com/search?q="
+        results = [
+            {"title": f"Learn {key} - Beginner Tutorial", "url": f"{base_url}{quote_plus('learn ' + key + ' beginner tutorial')}"},
+            {"title": f"{key} Official Documentation", "url": f"{base_url}{quote_plus(key + ' official documentation')}"},
+            {"title": f"Best {key} Courses", "url": f"{base_url}{quote_plus('best ' + key + ' courses')}"},
+            {"title": f"{key} Examples & Use Cases", "url": f"{base_url}{quote_plus(key + ' examples use cases')}"},
+            {"title": f"{key} Interview Questions", "url": f"{base_url}{quote_plus(key + ' interview questions')}"},
+        ]
+
     return results
 
 
