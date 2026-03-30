@@ -50,7 +50,7 @@ export default function LandingPage() {
               className="absolute top-8 left-8 flex items-center gap-2"
             >
               <span className="font-serif font-bold tracking-[0.2em] uppercase text-xs text-white">
-                SkillPath
+                Vidya Marg
               </span>
             </motion.div>
 
@@ -74,7 +74,7 @@ export default function LandingPage() {
                 transition={{ duration: 0.6, delay: 0.2 }}
                 className="relative z-10 text-5xl md:text-7xl lg:text-8xl bg-clip-text text-transparent bg-linear-to-b from-zinc-100 via-zinc-300 to-zinc-600 text-center font-serif font-bold mb-8 leading-[1.1]"
               >
-                Skill Path
+                Vidya Marg
               </motion.h1>
 
               <motion.p

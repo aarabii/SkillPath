@@ -6,7 +6,7 @@ import networkx as nx
 
 from db.supabase import get_cached_resources, store_cached_resources
 
-logger = logging.getLogger("skillpath.path_engine")
+logger = logging.getLogger("vidyamarg.path_engine")
 
 def search_web_google(query: str, max_results: int = 5) -> list[dict]:
     results = []

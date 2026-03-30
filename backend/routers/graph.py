@@ -7,7 +7,7 @@ from models.schemas import GraphRequest, GraphResponse
 from services.graph_engine import build_graph, validate_dag
 from services.llm import generate_graph, LLMError
 
-logger = logging.getLogger("skillpath.routers.graph")
+logger = logging.getLogger("vidyamarg.routers.graph")
 
 router = APIRouter(prefix="/graph", tags=["graph"])
 

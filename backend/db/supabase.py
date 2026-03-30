@@ -3,7 +3,7 @@ import os
 
 from supabase import create_client, Client
 
-logger = logging.getLogger("skillpath.db")
+logger = logging.getLogger("vidyamarg.db")
 
 
 class DBError(Exception):

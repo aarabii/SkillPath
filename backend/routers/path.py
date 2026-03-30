@@ -7,7 +7,7 @@ from models.schemas import PathRequest, PathResponse, PathStepSchema
 from services.graph_engine import build_graph, get_target_node
 from services.path_engine import compute_full_path, get_resources
 
-logger = logging.getLogger("skillpath.routers.path")
+logger = logging.getLogger("vidyamarg.routers.path")
 
 router = APIRouter(prefix="/path", tags=["path"])
 

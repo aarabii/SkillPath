@@ -14,10 +14,10 @@ logging.basicConfig(
     level=getattr(logging, LOG_LEVEL.upper(), logging.INFO),
     format="[%(asctime)s] %(levelname)s %(name)s — %(message)s",
 )
-logger = logging.getLogger("skillpath")
+logger = logging.getLogger("vidyamarg")
 
 app = FastAPI(
-    title="SkillPath API",
+    title="Vidya Marg API",
     description="Adaptive learning-path generator powered by LLM knowledge graphs",
     version="1.0.0",
 )
@@ -39,7 +39,7 @@ app.include_router(path.router, prefix="/api")
 
 @app.get("/")
 async def health_check():
-    return {"status": "ok", "service": "skillpath-api", "environment": ENVIRONMENT}
+    return {"status": "ok", "service": "vidyamarg-api", "environment": ENVIRONMENT}
 
 
-logger.info("SkillPath API initialised — environment=%s, log_level=%s", ENVIRONMENT, LOG_LEVEL)
+logger.info("Vidya Marg API initialised — environment=%s, log_level=%s", ENVIRONMENT, LOG_LEVEL)

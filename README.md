@@ -1,6 +1,6 @@
-# SkillPath
+# Vidya Marg
 
-SkillPath is an AI-powered, adaptive learning-path generator application. It acts as an interactive tutor capable of transforming a user's target skill into a complete prerequisite dependency tree (a knowledge graph), dynamically assessing baseline knowledge via quizzes, and generating a hyper-optimized curriculum.
+Vidya Marg is an AI-powered, adaptive learning-path generator application. It acts as an interactive tutor capable of transforming a user's target skill into a complete prerequisite dependency tree (a knowledge graph), dynamically assessing baseline knowledge via quizzes, and generating a hyper-optimized curriculum.
 
 ## Frequently Asked Questions (FAQ)
 
@@ -10,7 +10,7 @@ Learners often struggle to figure out _what_ they need to learn to master a comp
 
 ### What is our solution?
 
-SkillPath solves this by generating a directed acyclic graph (DAG) of prerequisites for any target skill using AI. It evaluates the user's existing knowledge through a dynamic, adaptive quiz, and ultimately outputs a highly optimized, personalized learning curriculum that skips familiar material and focuses only on what the user actually needs to learn.
+Vidya Marg solves this by generating a directed acyclic graph (DAG) of prerequisites for any target skill using AI. It evaluates the user's existing knowledge through a dynamic, adaptive quiz, and ultimately outputs a highly optimized, personalized learning curriculum that skips familiar material and focuses only on what the user actually needs to learn.
 
 ### Why did we build this?
 

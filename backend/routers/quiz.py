@@ -22,7 +22,7 @@ from services.graph_engine import build_graph
 from services.llm import generate_question, LLMError
 from services.quiz_engine import get_next_concept
 
-logger = logging.getLogger("skillpath.routers.quiz")
+logger = logging.getLogger("vidyamarg.routers.quiz")
 
 router = APIRouter(prefix="/quiz", tags=["quiz"])
 

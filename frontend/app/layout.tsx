@@ -18,7 +18,7 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "SkillPath",
+  title: "Vidya Marg",
   description:
     "A knowledge graph-based learning platform that helps you acquire new skills efficiently and effectively.",
 };

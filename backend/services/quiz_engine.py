@@ -3,7 +3,7 @@ from collections import deque
 
 import networkx as nx
 
-logger = logging.getLogger("skillpath.quiz_engine")
+logger = logging.getLogger("vidyamarg.quiz_engine")
 
 
 def should_skip(graph: nx.DiGraph, concept_id: str, known: list[str]) -> bool:

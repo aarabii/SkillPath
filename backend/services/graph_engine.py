@@ -2,7 +2,7 @@ import logging
 
 import networkx as nx
 
-logger = logging.getLogger("skillpath.graph_engine")
+logger = logging.getLogger("vidyamarg.graph_engine")
 
 
 def build_graph(nodes: list[dict], edges: list[dict]) -> nx.DiGraph:

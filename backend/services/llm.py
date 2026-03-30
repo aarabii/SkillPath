@@ -5,7 +5,7 @@ import time
 
 from groq import Groq
 
-logger = logging.getLogger("skillpath.llm")
+logger = logging.getLogger("vidyamarg.llm")
 
 
 class LLMError(Exception):
