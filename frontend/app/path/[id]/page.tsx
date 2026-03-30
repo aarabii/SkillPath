@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
+import { motion, useMotionValue, useTransform, animate, AnimatePresence } from 'framer-motion';
 import { api, PathResponse, GraphResponse } from '@/lib/api';
 import { PathStep } from '@/components/PathStep';
 import { GraphView } from '@/components/GraphView';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { Share2, FileText, Check } from 'lucide-react';
+import { Share2, FileText, Check, PlayCircle, BookOpen } from 'lucide-react';
 
 export default function PathDashboard() {
   const { id } = useParams() as { id: string };
@@ -18,6 +18,21 @@ export default function PathDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+
+  const selectedStep = useMemo(() => {
+    return pathData?.steps.find(s => s.concept_id === selectedNodeId);
+  }, [pathData, selectedNodeId]);
+
+  const nodeStatusesMap = useMemo(() => {
+    if (!graphData || !pathData) return {};
+    return graphData.nodes.reduce((acc, node) => {
+      const inPath = pathData.steps.find(p => p.concept_id === node.id);
+      acc[node.id] = inPath ? inPath.status : 'unassessed';
+      return acc;
+    }, {} as Record<string, any>);
+  }, [graphData, pathData]);
 
   useEffect(() => {
     if (!id) return;
@@ -145,18 +160,58 @@ export default function PathDashboard() {
       {/* Right Column: Mini Map */}
       <div className="w-full md:w-1/2 h-[50vh] md:h-screen sticky top-0 bg-background hidden md:block border-l border-white/5">
         {graphData ? (
-          <GraphView 
-            nodesData={graphData.nodes} 
-            edgesData={graphData.edges} 
-            // We highlight the nodes in the path
-            nodeStatuses={
-              graphData.nodes.reduce((acc, node) => {
-                const inPath = pathData.steps.find(p => p.concept_id === node.id);
-                acc[node.id] = inPath ? 'learning_path' : 'known';
-                return acc;
-              }, {} as Record<string, any>)
-            }
-          />
+          <>
+            <GraphView 
+              nodesData={graphData.nodes} 
+              edgesData={graphData.edges} 
+              nodeStatuses={nodeStatusesMap}
+              onNodeClick={(nodeId) => setSelectedNodeId(nodeId)}
+            />
+
+            <AnimatePresence>
+            {selectedStep && selectedStep.status === 'target' && (
+              <motion.div
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="absolute top-0 right-0 w-full md:w-96 h-full bg-background/95 backdrop-blur-xl border-l border-white/10 shadow-2xl z-40 flex flex-col pt-6 pb-6 px-6 overflow-y-auto hidden-scrollbar"
+              >
+                <div className="flex items-center justify-between mb-8 mt-14 md:mt-4">
+                  <h3 className="text-xl font-bold text-foreground">Resources</h3>
+                  <button 
+                    onClick={() => setSelectedNodeId(null)}
+                    className="p-2 rounded-full hover:bg-white/10 text-muted-foreground transition-colors"
+                  >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                  </button>
+                </div>
+
+                <div className="mb-6 border-b border-white/10 pb-6">
+                  <div className="inline-block px-3 py-1 bg-primary/20 text-primary text-xs font-bold uppercase tracking-wider rounded-full mb-3">Target Concept</div>
+                  <h4 className="text-2xl font-black">{selectedStep.concept_label}</h4>
+                  <p className="text-muted-foreground mt-2 text-sm leading-relaxed">{selectedStep.reason}</p>
+                </div>
+
+                  {/* Generic Resources */}
+                  {selectedStep.resources?.length > 0 && (
+                    <div className="pb-10">
+                      <h5 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary/70 mb-3">
+                        <BookOpen className="w-4 h-4 text-primary" /> Top Resources
+                      </h5>
+                      <div className="space-y-2">
+                        {selectedStep.resources.map((res: any, i: number) => (
+                          <a key={i} href={res.url} target="_blank" rel="noopener noreferrer" className="block p-4 rounded-xl border border-white/5 bg-white/5 hover:border-primary/30 hover:bg-primary/10 transition-colors group">
+                            <div className="font-medium text-sm text-foreground/90 group-hover:text-primary transition-colors line-clamp-2">{res.title}</div>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+          </>
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center bg-black">
             <div className="p-4 bg-white/5 rounded-full mb-4">

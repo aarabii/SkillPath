@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { PathStepSchema } from '@/lib/api';
-import { PlayCircle, FileText, BookOpen, Clock, ExternalLink } from 'lucide-react';
+import { PlayCircle, FileText, BookOpen, Clock, Library, Check, Target } from 'lucide-react';
 
 interface PathStepProps {
   step: PathStepSchema;
@@ -12,36 +12,31 @@ interface PathStepProps {
   isLast: boolean;
 }
 
-const getBadgeStyles = (type: string) => {
-  switch (type.toLowerCase()) {
-    case 'video':
-      return {
-        bg: 'bg-linear-to-r from-blue-500/20 to-purple-500/20',
-        border: 'border-blue-500/30',
-        text: 'text-blue-400',
-        icon: <PlayCircle className="w-4 h-4 mr-1 text-blue-400!" />
-      };
-    case 'article':
-      return {
-        bg: 'bg-linear-to-r from-emerald-500/20 to-teal-500/20',
-        border: 'border-emerald-500/30',
-        text: 'text-emerald-400',
-        icon: <FileText className="w-4 h-4 mr-1 text-emerald-400!" />
-      };
-    case 'doc':
-    default:
-      return {
-        bg: 'bg-linear-to-r from-orange-500/20 to-red-500/20',
-        border: 'border-orange-500/30',
-        text: 'text-orange-400',
-        icon: <BookOpen className="w-4 h-4 mr-1 text-orange-400!" />
-      };
-  }
-};
+function extractYouTubeId(url: string) {
+  const match = url.match(/[?&]v=([^&]+)/);
+  if (match) return match[1];
+  const shortMatch = url.match(/youtu\.be\/([^?]+)/);
+  if (shortMatch) return shortMatch[1];
+  return 'default';
+}
 
 export function PathStep({ step, index, isLast }: PathStepProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const badgeStyles = getBadgeStyles(step.resource_type);
+  const isMastered = step.status === 'mastered';
+  
+  const badgeStyles = isMastered 
+    ? {
+        bg: 'bg-emerald-500/20',
+        border: 'border-emerald-500/30',
+        text: 'text-emerald-400',
+        icon: <Check className="w-4 h-4 mr-1 text-emerald-400" />
+      }
+    : {
+        bg: 'bg-primary/20',
+        border: 'border-primary/30',
+        text: 'text-primary',
+        icon: <Target className="w-4 h-4 mr-1 text-primary" />
+      };
 
   return (
     <div 
@@ -85,7 +80,7 @@ export function PathStep({ step, index, isLast }: PathStepProps) {
             </h3>
             <div className={cn("inline-flex items-center px-3 py-1 rounded-full border text-xs font-bold uppercase tracking-wider backdrop-blur-md shadow-sm w-max", badgeStyles.bg, badgeStyles.border, badgeStyles.text)}>
               {badgeStyles.icon}
-              {step.resource_type}
+              {isMastered ? 'Mastered' : 'Target'}
             </div>
           </div>
           
@@ -94,55 +89,67 @@ export function PathStep({ step, index, isLast }: PathStepProps) {
           </p>
 
           {/* Resource Link Card */}
-          <a 
-            href={step.resource_url} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="group/link block relative overflow-hidden rounded-xl border border-white/10 bg-black/40 p-4 transition-all duration-300 hover:border-primary/40 hover:bg-primary/5"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover/link:bg-primary/20 transition-colors">
-                  <ExternalLink className="w-5 h-5 text-primary" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium text-foreground/90 group-hover/link:text-primary transition-colors">Start Learning</span>
-                  <span className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                    <Clock className="w-3 h-3" />
-                    Est. {step.estimated_minutes} mins
-                  </span>
+          {isMastered ? (
+            <div className="block relative overflow-hidden rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 transition-all duration-300">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                    <Check className="w-5 h-5 text-emerald-500" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-emerald-400">Concept Mastered</span>
+                    <span className="text-xs text-emerald-500/70 mt-0.5">
+                      You already know this concept
+                    </span>
+                  </div>
                 </div>
               </div>
-              <motion.div
-                className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center group-hover/link:bg-primary/10"
-                whileHover={{ scale: 1.1, x: 5 }}
-              >
-                <ArrowRightIcon className="w-4 h-4 text-muted-foreground group-hover/link:text-primary transition-colors" />
-              </motion.div>
             </div>
-          </a>
+          ) : (
+            <div className="flex overflow-x-auto gap-4 hidden-scrollbar pb-4 pt-2 -mx-2 px-2">
+              {step.resources?.map((res, i) => {
+                const url = res.href || res.url;
+                const isVideo = url.includes('youtube.com') || url.includes('youtu.be');
+                return (
+                <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="shrink-0 w-[280px] rounded-xl border border-white/10 bg-black/40 hover:border-primary/50 hover:bg-black/60 transition-all group flex flex-col overflow-hidden shadow-lg">
+                  <div className="w-full h-[140px] bg-white/5 relative border-b border-white/5 flex items-center justify-center overflow-hidden shrink-0">
+                    {res.image || isVideo ? (
+                      <img src={res.image || (isVideo ? `https://img.youtube.com/vi/${extractYouTubeId(url)}/mqdefault.jpg` : '')} alt={res.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                    ) : (
+                      <div className="w-full h-full bg-linear-to-br from-primary/20 to-black flex items-center justify-center">
+                        <BookOpen className="w-12 h-12 text-primary/30" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center pointer-events-none">
+                       {isVideo ? (
+                         <PlayCircle className="w-12 h-12 text-white/0 group-hover:text-white drop-shadow-lg transition-colors duration-300" />
+                       ) : (
+                         <Library className="w-10 h-10 text-white/0 group-hover:text-white drop-shadow-lg transition-colors duration-300" />
+                       )}
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-col flex-1 p-5">
+                    <h4 className="text-sm font-semibold line-clamp-2 text-foreground/90 group-hover:text-primary transition-colors leading-relaxed mb-2">
+                       {res.title}
+                    </h4>
+                    {res.description && (
+                      <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed mb-4">
+                        {res.description}
+                      </p>
+                    )}
+                    
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-auto pt-3 flex items-center gap-1.5 border-t border-white/5">
+                       {isVideo ? <PlayCircle className="w-3 h-3 text-red-500" /> : <BookOpen className="w-3 h-3 text-primary" />} 
+                       <span className="truncate">{url.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]}</span>
+                    </div>
+                  </div>
+                </a>
+              )})}
+            </div>
+          )}
         </div>
       </motion.div>
     </div>
-  );
-}
-
-function ArrowRightIcon(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M5 12h14" />
-      <path d="m12 5 7 7-7 7" />
-    </svg>
   );
 }

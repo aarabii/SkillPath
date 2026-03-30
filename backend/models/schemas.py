@@ -1,3 +1,4 @@
+from typing import Literal
 from pydantic import BaseModel, Field
 
 
@@ -60,14 +61,20 @@ class PathRequest(BaseModel):
     session_id: str
 
 
+class ResourceSchema(BaseModel):
+    title: str
+    url: str
+    image: str | None = None
+    description: str | None = None
+
+
 class PathStepSchema(BaseModel):
     order: int
     concept_id: str
     concept_label: str
     reason: str
-    resource_title: str
-    resource_url: str
-    resource_type: str
+    status: Literal["mastered", "target"]
+    resources: list[ResourceSchema]
     estimated_minutes: int
 
 

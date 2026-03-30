@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException
 from db.supabase import supabase, get_session, get_quiz_state, get_graph, store_path, get_path_if_exists, DBError
 from models.schemas import PathRequest, PathResponse, PathStepSchema
 from services.graph_engine import build_graph, get_target_node
-from services.path_engine import compute_minimal_path, get_resource
+from services.path_engine import compute_full_path, get_resources
 
 logger = logging.getLogger("skillpath.routers.path")
 
@@ -46,7 +46,32 @@ def _compute_and_store_path(session_id: str) -> PathResponse:
             },
         )
 
-    path_node_ids = compute_minimal_path(graph, unknown, target_node_id)
+    path_node_ids = compute_full_path(graph, target_node_id)
+
+    # 1. Precalculate unmastered labels for concurrent fetching
+    unmastered_labels = []
+    for node_id in path_node_ids:
+        if node_id not in known:
+            label = graph.nodes[node_id].get("label", node_id)
+            if label not in unmastered_labels:
+                unmastered_labels.append(label)
+
+    # 2. Concurrently fetch all resources (Network I/O bound)
+    resources_map = {}
+    if unmastered_labels:
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            future_to_label = {
+                executor.submit(get_resources, label): label 
+                for label in unmastered_labels
+            }
+            for future in concurrent.futures.as_completed(future_to_label):
+                label = future_to_label[future]
+                try:
+                    resources_map[label] = future.result()
+                except Exception as exc:
+                    logger.error("Parallel fetch failed for '%s': %s", label, exc)
+                    resources_map[label] = []
 
     steps: list[PathStepSchema] = []
     for order, node_id in enumerate(path_node_ids, start=1):
@@ -60,17 +85,21 @@ def _compute_and_store_path(session_id: str) -> PathResponse:
         else:
             reason = "Target skill"
 
-        resource = get_resource(label)
+        status = "mastered" if node_id in known else "target"
+        
+        if status == "target":
+            resources = resources_map.get(label, [])
+        else:
+            resources = []
 
         steps.append(PathStepSchema(
             order=order,
             concept_id=node_id,
             concept_label=label,
             reason=reason,
-            resource_title=resource["title"],
-            resource_url=resource["url"],
-            resource_type=resource["type"],
-            estimated_minutes=resource["estimated_minutes"],
+            status=status,
+            resources=resources,
+            estimated_minutes=30,
         ))
 
     concepts_known = len(known)
@@ -109,22 +138,8 @@ async def create_path(body: PathRequest):
 @router.get("/{session_id}")
 async def get_path(session_id: str):
     try:
-        import traceback
-        # Step 1: Try to get existing path directly from supabase client
-        result = supabase.table("paths").select("*").eq("session_id", session_id).execute()
-        
-        if result.data and len(result.data) > 0:
-            # Cached path exists — return it
-            stored = result.data[0]
-            steps = stored.get("steps", [])
-            return {
-                "total_concepts_in_graph": len(steps),
-                "concepts_already_known": 0,
-                "reduction_percentage": 0,
-                "steps": steps
-            }
-        
-        # Step 2: No cached path — compute fresh
+        # Always compute fresh from current graph and quiz state
+        # This ensures 'reduction_percentage' and 'mastered' features work dynamically
         return _compute_and_store_path(session_id)
         
     except Exception as e:

@@ -262,3 +262,37 @@ def get_path_if_exists(session_id: str) -> dict | None:
         logger.error("Failed to check path: %s", exc, exc_info=True)
         raise DBError(f"Failed to check path: {exc}") from exc
 
+
+def get_cached_resources(concept_label: str) -> list | None:
+    """Check if web-scraped resources for this exact concept exist in our caching table."""
+    try:
+        result = (
+            supabase.table("concept_resources")
+            .select("resources")
+            .eq("concept_label", concept_label)
+            .maybe_single()
+            .execute()
+        )
+        logger.debug("DB SELECT concept_resources — label=%s", concept_label)
+        if result is None or not result.data:
+            return None
+        return result.data.get("resources")
+    except Exception as exc:
+        logger.warning("Failed to check cached resources: %s", exc)
+        return None
+
+
+def store_cached_resources(concept_label: str, resources: list) -> None:
+    """Store dynamically scraped resources into the caching table."""
+    try:
+        (
+            supabase.table("concept_resources")
+            .upsert({
+                "concept_label": concept_label,
+                "resources": resources
+            }, on_conflict="concept_label", ignore_duplicates=True)
+            .execute()
+        )
+        logger.debug("DB UPSERT concept_resources — label=%s", concept_label)
+    except Exception as exc:
+        logger.warning("Failed to store cached resources: %s", exc)

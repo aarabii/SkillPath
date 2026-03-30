@@ -59,14 +59,21 @@ export interface PathRequest {
   session_id: string;
 }
 
+export interface ResourceSchema {
+  title: string;
+  url: string;
+  href?: string;
+  image?: string;
+  description?: string;
+}
+
 export interface PathStepSchema {
   order: number;
   concept_id: string;
   concept_label: string;
   reason: string;
-  resource_title: string;
-  resource_url: string;
-  resource_type: string;
+  status: 'mastered' | 'target';
+  resources: ResourceSchema[];
   estimated_minutes: number;
 }
 
