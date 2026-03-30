@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
-ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+ENVIRONMENT = os.getenv("ENVIRONMENT", "prod")
 LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG" if ENVIRONMENT == "development" else "INFO")
 
 logging.basicConfig(
