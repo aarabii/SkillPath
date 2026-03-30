@@ -20,8 +20,8 @@ To provide a customized, time-efficient learning experience. By leveraging LLMs 
 
 We utilized a two-tier architecture:
 
-- **Frontend:** Built with Next.js, React, TailwindCSS, and Framer Motion. It handles the UI, state, and visual map representation using React Flow.
-- **Backend:** A Python FastAPI application that manages domain logic, integrates with Groq LLMs for concept and question generation, uses NetworkX for handling DAG logic, and persists data via Supabase (PostgreSQL).
+- **Frontend:** Built with Next.js, React, TailwindCSS, and Framer Motion. It handles the UI, modern typography (Inter/JetBrains Mono + Playfair), animated hero elements, and visual map representation using React Flow.
+- **Backend:** A Python FastAPI application that manages domain logic, integrates with Groq LLMs for generation, uses BeautifulSoup for real-time optimal Google Search scraping, implements NetworkX for handling DAG logic, and persists data via Supabase (PostgreSQL).
 
 ### How does a user interact with the app?
 
@@ -81,7 +81,7 @@ All endpoints are mounted with the `/api` prefix in [backend/main.py](backend/ma
 2. **Visualization:** The Next.js frontend fetches the DAG and plots it using `@xyflow/react` internally in [frontend/components/GraphView.tsx](frontend/components/GraphView.tsx).
 3. **Assessment:** The user triggers `POST /api/quiz/start`. The backend quiz engine ([backend/services/quiz_engine.py](backend/services/quiz_engine.py)) finds independent concepts and uses the LLM to generate targeted questions.
 4. **Adaptive Learning:** User answers (`POST /api/quiz/answer`) are validated. The backend updates the database (`quiz_state` and `quiz_results`), appending concept IDs to known/unknown arrays, until the knowledge graph is fully assessed.
-5. **Path Construction:** The frontend requests the final curriculum via `POST /api/path` or `GET`. The backend path engine ([backend/services/path_engine.py](backend/services/path_engine.py)) trims known concepts and generates an optimal sequence.
+5. **Path Construction:** The frontend requests the final curriculum via `POST /api/path` or `GET`. The backend path engine ([backend/services/path_engine.py](backend/services/path_engine.py)) trims known concepts, generates an optimal sequence, and automatically scrapes & caches the top 5 interactive resource hyperlinks using real-time Google search fallbacks.
 
 ## Local Development Setup
 
@@ -107,4 +107,5 @@ The Supabase PostgreSQL database handles persistence:
 - `graphs`: Stores relational parameters like `nodes` and `edges` (JSONB).
 - `quiz_state`: Maintains iterative arrays of assessed, known, and unknown concepts.
 - `paths`: Stores final customized curriculum steps.
+- `concept_resources`: Caches the Top 5 Google Search scraper results linking directly to study materials so concurrent calls save time.
 - `quiz_results`: History table mapping user answers over time.
