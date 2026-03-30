@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const defaultLoadingMessages = [
-  "Analyzing knowledge vectors...",
-  "Generating neural graph...",
-  "Synthesizing learning paths...",
-  "Connecting concepts...",
-  "Preparing your curriculum...",
+  "Analyzing...",
+  "Generating...",
+  "Synthesizing...",
+  "Connecting...",
+  "Preparing...",
 ];
 
 export function LoadingSpinner({
@@ -29,75 +29,31 @@ export function LoadingSpinner({
   }, [messages]);
 
   return (
-    <div className="flex flex-col items-center justify-center space-y-8 p-12 min-h-[400px]">
-      <div className="relative flex items-center justify-center w-32 h-32">
-        {/* Outer glowing pulse ring */}
+    <div className="flex flex-col items-center justify-center space-y-8 p-12 min-h-100">
+      <div className="relative flex items-center justify-center w-8 h-8">
         <motion.div
+          className="absolute inset-0 border border-white"
           animate={{
-            scale: [1, 1.5, 1],
-            opacity: [0.3, 0.1, 0.3],
+            rotate: [0, 90, 180],
+            scale: [1, 0.8, 1],
           }}
           transition={{
-            duration: 3,
+            duration: 2,
             repeat: Infinity,
             ease: "easeInOut",
           }}
-          className="absolute inset-0 rounded-full border border-primary/30"
-          style={{ boxShadow: '0 0 30px 10px rgba(0, 255, 255, 0.1)' }}
         />
-        
-        {/* Core rotating shapes */}
-        <motion.div 
-          animate={{ 
-            rotate: 360,
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: "linear",
-          }}
-          className="relative w-16 h-16"
-        >
-          {/* Cyan Square */}
-          <motion.div
-            className="absolute inset-0 border-2 border-primary opacity-80 rounded-md"
-            style={{ boxShadow: '0 0 15px 2px rgba(0, 255, 255, 0.5)' }}
-            animate={{
-              rotate: [0, 90],
-              scale: [1, 0.8, 1],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-          {/* Purple Rotated Square */}
-          <motion.div
-            className="absolute inset-0 border-2 border-secondary opacity-80 rounded-md rotate-45"
-            style={{ boxShadow: '0 0 15px 2px rgba(138, 43, 226, 0.5)' }}
-            animate={{
-              rotate: [45, -45],
-              scale: [0.8, 1, 0.8],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-        </motion.div>
       </div>
 
-      <div className="h-8 relative w-full max-w-sm flex items-center justify-center overflow-hidden">
+      <div className="h-4 relative w-full max-w-sm flex items-center justify-center overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.p
             key={currentMessageIndex}
-            initial={{ opacity: 0, y: 15, filter: 'blur(4px)' }}
-            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-            exit={{ opacity: 0, y: -15, filter: 'blur(4px)' }}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            className="absolute text-center text-sm tracking-widest uppercase text-primary font-mono glow-text-sm"
+            className="absolute text-center text-[10px] tracking-[0.2em] uppercase text-zinc-500 font-sans"
           >
             {messages[currentMessageIndex]}
           </motion.p>

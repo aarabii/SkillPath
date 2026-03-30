@@ -1,13 +1,14 @@
-'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { api, QuestionSchema } from '@/lib/api';
-import { QuizCard } from '@/components/QuizCard';
-import { LoadingSpinner } from '@/components/LoadingSpinner';
-import confetti from 'canvas-confetti';
-import { Sparkles } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { api, QuestionSchema } from "@/lib/api";
+import { QuizCard } from "@/components/QuizCard";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import confetti from "canvas-confetti";
+import { Sparkles } from "lucide-react";
 
 export default function QuizArena() {
   const { id } = useParams() as { id: string };
@@ -15,11 +16,11 @@ export default function QuizArena() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  const [currentQuestion, setCurrentQuestion] = useState<QuestionSchema | null>(null);
-  const [isComplete, setIsComplete] = useState(false);
-  
 
+  const [currentQuestion, setCurrentQuestion] = useState<QuestionSchema | null>(
+    null,
+  );
+  const [isComplete, setIsComplete] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -30,7 +31,9 @@ export default function QuizArena() {
         setCurrentQuestion(res.question);
       } catch (err: any) {
         console.error("Quiz init failed:", err);
-        setError("Failed to initialize cognitive assessment. Target might be untracked.");
+        setError(
+          "Failed to initialize cognitive assessment. Target might be untracked.",
+        );
       } finally {
         setIsLoading(false);
       }
@@ -41,7 +44,7 @@ export default function QuizArena() {
 
   const handleAnswerSubmit = async (selectedOption: string) => {
     if (!currentQuestion) throw new Error("Quiz not ready");
-    
+
     const res = await api.submitAnswer({
       session_id: id,
       concept_id: currentQuestion.concept_id,
@@ -52,7 +55,6 @@ export default function QuizArena() {
   };
 
   const handleNext = (nextQuestion?: QuestionSchema, completed?: boolean) => {
-
     if (completed) {
       setIsComplete(true);
       triggerConfetti();
@@ -75,14 +77,14 @@ export default function QuizArena() {
         angle: 60,
         spread: 55,
         origin: { x: 0 },
-        colors: ['#00ffff', '#8a2be2', '#00ff80']
+        colors: ["#ffffff", "#888888", "#aaaaaa"],
       });
       confetti({
         particleCount: 5,
         angle: 120,
         spread: 55,
         origin: { x: 1 },
-        colors: ['#00ffff', '#8a2be2', '#00ff80']
+        colors: ["#ffffff", "#888888", "#aaaaaa"],
       });
 
       if (Date.now() < end) {
@@ -94,17 +96,24 @@ export default function QuizArena() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-black">
-        <LoadingSpinner messages={["Calibrating assessment algorithms...", "Mapping structural dependencies..."]} />
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <LoadingSpinner
+          messages={[
+            "Calibrating assessment algorithms...",
+            "Mapping structural dependencies...",
+          ]}
+        />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-black text-center p-6">
-        <h2 className="text-2xl font-bold text-destructive mb-4">Calibration Error</h2>
-        <p className="text-muted-foreground">{error}</p>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-950 text-center p-6">
+        <h2 className="text-2xl font-serif text-white mb-4">
+          Calibration Error
+        </h2>
+        <p className="text-zinc-400">{error}</p>
       </div>
     );
   }
@@ -113,21 +122,19 @@ export default function QuizArena() {
   const progressPct = isComplete
     ? 100
     : currentQuestion
-      ? Math.round((currentQuestion.progress.assessed / Math.max(currentQuestion.progress.total, 1)) * 100)
+      ? Math.round(
+          (currentQuestion.progress.assessed /
+            Math.max(currentQuestion.progress.total, 1)) *
+            100,
+        )
       : 0;
 
   return (
-    <main className="min-h-screen bg-black flex flex-col relative overflow-hidden">
-      {/* Cinematic ambient background */}
-      <div className="absolute inset-0 pointer-events-none w-full h-full opacity-30">
-        <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-primary blur-[150px] rounded-full mix-blend-screen opacity-20" />
-        <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-secondary blur-[150px] rounded-full mix-blend-screen opacity-20" />
-      </div>
-
-      {/* Slim Glowing Progress Bar */}
-      <div className="w-full h-1 bg-white/5 relative z-50">
-        <motion.div 
-          className="h-full bg-primary shadow-[0_0_20px_rgba(0,255,255,0.8)]"
+    <main className="min-h-screen bg-zinc-950 flex flex-col relative overflow-hidden">
+      {/* Slim Progress Bar */}
+      <div className="w-full h-px bg-white/5 relative z-50">
+        <motion.div
+          className="h-full bg-white"
           initial={{ width: 0 }}
           animate={{ width: `${progressPct}%` }}
           transition={{ duration: 0.5, ease: "easeInOut" }}
@@ -139,13 +146,13 @@ export default function QuizArena() {
           {!isComplete && currentQuestion ? (
             <motion.div
               key={currentQuestion.concept_id}
-              initial={{ opacity: 0, x: 100, filter: 'blur(10px)' }}
-              animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-              exit={{ opacity: 0, x: -100, filter: 'blur(10px)' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
               className="w-full"
             >
-              <QuizCard 
+              <QuizCard
                 question={currentQuestion}
                 onAnswerSubmit={handleAnswerSubmit}
                 onNext={(res) => {
@@ -156,24 +163,26 @@ export default function QuizArena() {
           ) : isComplete ? (
             <motion.div
               key="complete"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="text-center w-full max-w-2xl bg-background/50 backdrop-blur-3xl border border-white/10 p-12 rounded-3xl shadow-2xl"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6 }}
+              className="text-center w-full max-w-2xl border border-white/10 p-12 bg-zinc-900/50 backdrop-blur-sm"
             >
-              <div className="w-20 h-20 bg-success/20 rounded-full flex items-center justify-center mx-auto mb-8 shadow-[0_0_40px_rgba(0,255,128,0.3)] border border-success/50">
-                <Sparkles className="w-10 h-10 text-success" />
+              <div className="w-16 h-16 border border-white/20 flex items-center justify-center mx-auto mb-8">
+                <Sparkles className="w-6 h-6 text-zinc-400" />
               </div>
-              <h1 className="text-4xl md:text-5xl font-bold mb-6 text-transparent bg-clip-text bg-linear-to-b from-white to-white/60">
+              <h1 className="text-4xl md:text-5xl font-serif mb-6 text-white">
                 Assessment Complete
               </h1>
-              <p className="text-xl text-muted-foreground mb-10 leading-relaxed">
-                We have calibrated your baseline knowledge. Your personalized hyper-learning path is ready.
+              <p className="text-lg text-zinc-400 mb-10 leading-relaxed font-sans">
+                We have calibrated your baseline knowledge. Your personalized
+                learning path is ready.
               </p>
               <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ backgroundColor: "rgba(255,255,255,0.05)" }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => router.push(`/path/${id}`)}
-                className="px-10 py-5 bg-primary text-primary-foreground font-bold text-lg rounded-full shadow-[0_0_30px_rgba(0,255,255,0.4)] hover:shadow-[0_0_50px_rgba(0,255,255,0.6)] transition-all uppercase tracking-widest"
+                className="px-8 py-4 border border-white/20 text-white font-sans text-sm tracking-widest uppercase transition-colors hover:border-white/40"
               >
                 Reveal Your Path
               </motion.button>
